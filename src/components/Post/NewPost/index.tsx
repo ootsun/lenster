@@ -168,7 +168,7 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
       }: {
         createPostTypedData: CreatePostBroadcastItemResult
       }) {
-        console.log('const createPostTypedData')
+        console.log('createPostTypedData')
         console.log(createPostTypedData)
         Logger.log('[Mutation]', 'Generated createPostTypedData')
         const { id, typedData } = createPostTypedData
@@ -212,32 +212,14 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
         typedData.value.referenceModule = referenceModule
         typedData.value.referenceModuleInitData = referenceModuleInitData
 
-        const inputStructTest = {
-          profileId,
-          contentURI,
-          collectModule,
-          collectModuleInitData,
-          referenceModule,
-          referenceModuleInitData
-        }
-
-        console.log('inputStructTest')
-        console.log(inputStructTest)
-
         try {
-          console.log('try')
-          console.log(profileId)
-          console.log(referenceModule)
-          console.log(referenceModuleInitData)
           const signature = await signTypedDataAsync({
             domain: omit(typedData?.domain, '__typename'),
             types: omit(typedData?.types, '__typename'),
             value: omit(typedData?.value, '__typename')
           })
-          console.log('try2')
           setUserSigNonce(userSigNonce + 1)
           const { v, r, s } = splitSignature(signature)
-          console.log('try3')
           const sig = { v, r, s, deadline }
           const inputStruct = {
             profileId,
@@ -248,17 +230,10 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
             referenceModuleInitData,
             sig
           }
-          console.log('!!! inputStruct !!!')
-          console.log(inputStruct)
-          console.log('!!!!! RELAY_ON')
-          console.log(RELAY_ON)
-          console.log(id)
-          console.log(signature)
           if (RELAY_ON) {
             const {
               data: { broadcast: result }
             } = await broadcast({ variables: { request: { id, signature } } })
-            console.log(result)
 
             if ('reason' in result) write({ args: inputStruct })
           } else {
@@ -275,7 +250,6 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
   )
 
   const createPost = async () => {
-    console.log('const createPost')
     if (!isAuthenticated) return toast.error(SIGN_WALLET)
     if (postContent.length === 0 && attachments.length === 0) {
       return setPostContentError('Post should not be empty!')
