@@ -121,7 +121,7 @@ const NewComment: FC<Props> = ({
   const [commentContentError, setCommentContentError] = useState<string>('')
   const [selectedModule, setSelectedModule] =
     useState<EnabledModule>(defaultModuleData)
-  const [onlyFollowers, setOnlyFollowers] = useState<boolean>(false)
+  const [onlyFollowers, setOnlyFollowers] = useState<string>('everyone')
   const [feeData, setFeeData] = useState<FEE_DATA_TYPE>(defaultFeeData)
   const [isUploading, setIsUploading] = useState<boolean>(false)
   const [attachments, setAttachments] = useState<LensterAttachment[]>([])
