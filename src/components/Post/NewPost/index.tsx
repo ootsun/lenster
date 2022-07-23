@@ -31,9 +31,15 @@ import {
   APP_NAME,
   ERROR_MESSAGE,
   ERRORS,
+  EVERYONE_REFERENCE_MODULE,
+  EVERYONE_REFERENCE_MODULE_INIT_DATA,
+  FOLLOWER_ONLY_REFERENCE_MODULE,
+  FOLLOWER_ONLY_REFERENCE_MODULE_INIT_DATA,
   LENSHUB_PROXY,
   RELAY_ON,
-  SIGN_WALLET
+  SIGN_WALLET,
+  SISMO_REFERENCE_MODULE,
+  SISMO_REFERENCE_MODULE_INIT_DATA
 } from 'src/constants'
 import { useAppPersistStore, useAppStore } from 'src/store/app'
 import { v4 as uuid } from 'uuid'
@@ -162,9 +168,13 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
       }: {
         createPostTypedData: CreatePostBroadcastItemResult
       }) {
+        console.log('const createPostTypedData')
+        console.log(createPostTypedData)
         Logger.log('[Mutation]', 'Generated createPostTypedData')
         const { id, typedData } = createPostTypedData
-        const {
+        console.log('typedData')
+        console.log(typedData)
+        let {
           profileId,
           contentURI,
           collectModule,
@@ -173,15 +183,61 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
           referenceModuleInitData,
           deadline
         } = typedData?.value
+        // Here we've already called the lens API (in order to have a correct object (typeData) in order to do the transaction on the lens protocol right after)
+        // So here we set manually the addresses and InitData for the reference module, because our module is not whitelisted on lens, and not available in lens API too
+        switch (onlyFollowers) {
+          case 'everyone': {
+            referenceModule = EVERYONE_REFERENCE_MODULE
+            referenceModuleInitData = EVERYONE_REFERENCE_MODULE_INIT_DATA
+            break
+          }
+          case 'followers': {
+            referenceModule = FOLLOWER_ONLY_REFERENCE_MODULE
+            referenceModuleInitData = FOLLOWER_ONLY_REFERENCE_MODULE_INIT_DATA
+            break
+          }
+          case 'sismo-badges': {
+            referenceModule = SISMO_REFERENCE_MODULE
+            referenceModuleInitData = SISMO_REFERENCE_MODULE_INIT_DATA
+            break
+          }
+          default: {
+            referenceModule = EVERYONE_REFERENCE_MODULE
+            referenceModuleInitData = EVERYONE_REFERENCE_MODULE_INIT_DATA
+            break
+          }
+        }
+
+        // modification of reference module for the signature
+        typedData.value.referenceModule = referenceModule
+        typedData.value.referenceModuleInitData = referenceModuleInitData
+
+        const inputStructTest = {
+          profileId,
+          contentURI,
+          collectModule,
+          collectModuleInitData,
+          referenceModule,
+          referenceModuleInitData
+        }
+
+        console.log('inputStructTest')
+        console.log(inputStructTest)
 
         try {
+          console.log('try')
+          console.log(profileId)
+          console.log(referenceModule)
+          console.log(referenceModuleInitData)
           const signature = await signTypedDataAsync({
             domain: omit(typedData?.domain, '__typename'),
             types: omit(typedData?.types, '__typename'),
             value: omit(typedData?.value, '__typename')
           })
+          console.log('try2')
           setUserSigNonce(userSigNonce + 1)
           const { v, r, s } = splitSignature(signature)
+          console.log('try3')
           const sig = { v, r, s, deadline }
           const inputStruct = {
             profileId,
@@ -192,10 +248,17 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
             referenceModuleInitData,
             sig
           }
+          console.log('!!! inputStruct !!!')
+          console.log(inputStruct)
+          console.log('!!!!! RELAY_ON')
+          console.log(RELAY_ON)
+          console.log(id)
+          console.log(signature)
           if (RELAY_ON) {
             const {
               data: { broadcast: result }
             } = await broadcast({ variables: { request: { id, signature } } })
+            console.log(result)
 
             if ('reason' in result) write({ args: inputStruct })
           } else {
@@ -212,6 +275,7 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
   )
 
   const createPost = async () => {
+    console.log('const createPost')
     if (!isAuthenticated) return toast.error(SIGN_WALLET)
     if (postContent.length === 0 && attachments.length === 0) {
       return setPostContentError('Post should not be empty!')
@@ -266,6 +330,37 @@ const NewPost: FC<Props> = ({ setShowModal, hideCard = false }) => {
       }
     })
   }
+
+  // mutation CreatePostTypedData {
+  //   createPostTypedData(request: { profileId: "0x03", contentURI: "ipfs://QmPogtffEF3oAbKERsoR4Ky8aTvLgBF5totp5AuF8YN6vl", collectModule: {revertCollectModule: true},referenceModule: {followerOnlyReferenceModule: false}}) {
+  //     id
+  //     expiresAt
+  //     typedData {
+  //       types {
+  //         PostWithSig {
+  //           name
+  //           type
+  //         }
+  //       }
+  //       domain {
+  //         name
+  //         chainId
+  //         version
+  //         verifyingContract
+  //       }
+  //       value {
+  //         nonce
+  //         deadline
+  //         profileId
+  //         contentURI
+  //         collectModule
+  //         collectModuleInitData
+  //         referenceModule
+  //         referenceModuleInitData
+  //       }
+  //     }
+  //   }
+  // }
 
   const setGifAttachment = (gif: IGif) => {
     const attachment = {

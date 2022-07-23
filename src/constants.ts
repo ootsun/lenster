@@ -23,6 +23,8 @@ export const RELAY_ON =
     ? process.env.NEXT_PUBLIC_RELAY_ON === 'true'
     : false
 
+console.log(RELAY_ON)
+
 // Messages
 export const ERROR_MESSAGE = 'Something went wrong!'
 export const CONNECT_WALLET = 'Please connect your wallet.'
@@ -84,3 +86,14 @@ export const REVERT_COLLECT_MODULE = IS_MAINNET
 export const DEFAULT_COLLECT_TOKEN = IS_MAINNET
   ? '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270'
   : '0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889'
+
+// referenceModule Addresses
+export const EVERYONE_REFERENCE_MODULE = ZERO_ADDRESS
+export const FOLLOWER_ONLY_REFERENCE_MODULE =
+  '0x17317F96f0C7a845FFe78c60B10aB15789b57Aaa'
+export const SISMO_REFERENCE_MODULE = ''
+
+// referenceModuleInitData Addresses
+export const EVERYONE_REFERENCE_MODULE_INIT_DATA = '0x'
+export const FOLLOWER_ONLY_REFERENCE_MODULE_INIT_DATA = '0x'
+export const SISMO_REFERENCE_MODULE_INIT_DATA = ''
