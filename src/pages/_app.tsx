@@ -2,14 +2,14 @@ import '../styles.css'
 
 import { ApolloProvider } from '@apollo/client'
 import SiteLayout from '@components/SiteLayout'
-import { publicProvider } from '@wagmi/core/dist/declarations/src/providers/public'
+import { JsonRpcProvider } from '@ethersproject/providers'
+// import { MetaMaskConnector } from '@wagmi/core/dist/declarations/src/connectors/metaMask'
+import { MetaMaskConnector } from '@wagmi/core/connectors/metaMask'
 import { AppProps } from 'next/app'
 import Script from 'next/script'
 import { ThemeProvider } from 'next-themes'
-import { ALCHEMY_RPC, CHAIN_ID, IS_PRODUCTION } from 'src/constants'
-import { chain, configureChains, createClient, WagmiConfig } from 'wagmi'
-import { InjectedConnector } from 'wagmi/connectors/injected'
-import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+import { IS_PRODUCTION } from 'src/constants'
+import { chain, createClient, WagmiConfig } from 'wagmi'
 
 import client from '../apollo'
 
@@ -20,29 +20,50 @@ export { reportWebVitals } from 'next-axiom'
 //   [alchemyProvider({ alchemyId: ALCHEMY_KEY })]
 // )
 
-const { chains, provider } = configureChains(
-  [chain.hardhat],
-  [publicProvider()]
-)
+// const { chains, provider } = configureChains(
+//   [chain.hardhat],
+//   [getDefaultProvider]
+// )
 
-const connectors = () => {
-  return [
-    new InjectedConnector({
-      chains,
-      options: { shimDisconnect: true }
-    }),
-    new WalletConnectConnector({
-      chains,
-      options: { rpc: { [CHAIN_ID]: ALCHEMY_RPC } }
-    })
-  ]
-}
+const ethProvider = new JsonRpcProvider(process.env.RPC_URL, chain.hardhat.id)
+const connector = new MetaMaskConnector({ chains: [chain.hardhat] })
 
 const wagmiClient = createClient({
   autoConnect: true,
-  connectors,
-  provider
+  provider: ethProvider,
+  connectors: [connector]
 })
+
+// const client = createClient({
+//   connectors: [new InjectedConnector({ chains: [chain.hardhat] })
+// })
+
+// const connectors = () => {
+//   return [
+//     new InjectedConnector({
+//       chains,
+//       options: { shimDisconnect: true }
+//     }),
+//     new WalletConnectConnector({
+//       chains,
+//       options: { rpc: { [CHAIN_ID]: ALCHEMY_RPC } }
+//     })
+//   ]
+// }
+
+// const wagmiClient = createClient({
+//   autoConnect: true,
+//   connectors,
+//   provider
+// })
+
+// const wagmiClient = createClient({
+//   autoConnect: true,
+//   connectors,
+//   provider(config) {
+//     if()
+//   }
+// })
 
 const App = ({ Component, pageProps }: AppProps) => {
   return (
