@@ -35,13 +35,16 @@ import {
   APP_NAME,
   ERROR_MESSAGE,
   ERRORS,
-  LENSHUB_PROXY,
+  LENSHUB_PROXY, PROFILE_NFT,
   RELAY_ON,
-  SIGN_WALLET
-} from 'src/constants'
+  SIGN_WALLET, SISMO_BADGE, SISMO_BADGE_ID, SISMO_REFERENCE_MODULE
+} from 'src/constants';
 import { useAppPersistStore, useAppStore } from 'src/store/app'
 import { v4 as uuid } from 'uuid'
-import { useContractWrite, useSignTypedData } from 'wagmi'
+import {useContractRead, useContractWrite, useSignTypedData} from 'wagmi';
+import {ProfileNFT} from '@abis/ProfileNFT';
+import {WarningMessage} from '@components/UI/WarningMessage';
+import {Erc1155} from '@abis/Erc1155';
 
 const Attachment = dynamic(() => import('../../Shared/Attachment'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
@@ -293,6 +296,44 @@ const NewComment: FC<Props> = ({
     setAttachments([...attachments, attachment])
   }
 
+  const [isErc1155TokenGatedReferenceModule, setIsErc1155TokenGatedReferenceModule] = useState<boolean>(true)
+  const [userHasTheRequiredErc1155, setUserHasTheRequiredErc1155] = useState<boolean>(false)
+  if(setShowModal && post) {
+    const profileId: string = post.profile.id;
+    const pubId: string = post.id.split(post.profile.id + '-')[1];
+
+    useContractRead({
+      addressOrName: PROFILE_NFT,
+      contractInterface: ProfileNFT,
+      functionName: 'getPub',
+      args: [profileId, pubId],
+      onSuccess(res) {
+        if(res?.referenceModule === SISMO_REFERENCE_MODULE) {
+          setIsErc1155TokenGatedReferenceModule(true)
+          useContractRead({
+            addressOrName: SISMO_BADGE,
+            contractInterface: Erc1155,
+            functionName: 'balanceOf',
+            args: [currentUser.ownedBy, SISMO_BADGE_ID],
+            onSuccess(res) {
+              setUserHasTheRequiredErc1155(res[0] > 0)
+            },
+            onError(error: any) {
+              toast.error(error?.data?.message ?? error?.message)
+            }
+          })
+        } else {
+          setIsErc1155TokenGatedReferenceModule(false)
+        }
+      },
+      onError(error: any) {
+        toast.error(error?.data?.message ?? error?.message)
+      }
+    })
+  } else {
+    setIsErc1155TokenGatedReferenceModule(false);
+  }
+
   return (
     <Card className={hideCard ? 'border-0 !shadow-none !bg-transparent' : ''}>
       <div className="px-5 pt-5 pb-3">
@@ -348,6 +389,9 @@ const NewComment: FC<Props> = ({
                   }
                 />
               ) : null}
+              {isErc1155TokenGatedReferenceModule && userHasTheRequiredErc1155 &&
+                  <WarningMessage className="linkify ml-1" message={<>A badge is required to comment this post. Mint yours on <a href="https://sandbox.sismo.io/lens-me-in" target="_blank">Sismo</a>!</>}/>
+              }
               <Button
                 className="ml-auto"
                 disabled={
@@ -355,7 +399,8 @@ const NewComment: FC<Props> = ({
                   typedDataLoading ||
                   signLoading ||
                   writeLoading ||
-                  broadcastLoading
+                  broadcastLoading ||
+                  (isErc1155TokenGatedReferenceModule && userHasTheRequiredErc1155)
                 }
                 icon={
                   isUploading ||
