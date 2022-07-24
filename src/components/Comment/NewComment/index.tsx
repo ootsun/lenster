@@ -1,4 +1,6 @@
+import { Erc1155 } from '@abis/Erc1155'
 import { LensHubProxy } from '@abis/LensHubProxy'
+import { ProfileNFT } from '@abis/ProfileNFT'
 import { gql, useMutation } from '@apollo/client'
 import Attachments from '@components/Shared/Attachments'
 import Markup from '@components/Shared/Markup'
@@ -9,6 +11,7 @@ import { Card } from '@components/UI/Card'
 import { ErrorMessage } from '@components/UI/ErrorMessage'
 import { MentionTextArea } from '@components/UI/MentionTextArea'
 import { Spinner } from '@components/UI/Spinner'
+import { WarningMessage } from '@components/UI/WarningMessage'
 import { LensterAttachment, LensterPost } from '@generated/lenstertypes'
 import {
   CreateCommentBroadcastItemResult,
@@ -35,16 +38,17 @@ import {
   APP_NAME,
   ERROR_MESSAGE,
   ERRORS,
-  LENSHUB_PROXY, PROFILE_NFT,
+  LENSHUB_PROXY,
+  PROFILE_NFT,
   RELAY_ON,
-  SIGN_WALLET, SISMO_BADGE, SISMO_BADGE_ID, SISMO_REFERENCE_MODULE
-} from 'src/constants';
+  SIGN_WALLET,
+  SISMO_BADGE,
+  SISMO_BADGE_ID,
+  SISMO_REFERENCE_MODULE
+} from 'src/constants'
 import { useAppPersistStore, useAppStore } from 'src/store/app'
 import { v4 as uuid } from 'uuid'
-import {useContractRead, useContractWrite, useSignTypedData} from 'wagmi';
-import {ProfileNFT} from '@abis/ProfileNFT';
-import {WarningMessage} from '@components/UI/WarningMessage';
-import {Erc1155} from '@abis/Erc1155';
+import { useContractRead, useContractWrite, useSignTypedData } from 'wagmi'
 
 const Attachment = dynamic(() => import('../../Shared/Attachment'), {
   loading: () => <div className="mb-1 w-5 h-5 rounded-lg shimmer" />
@@ -296,43 +300,43 @@ const NewComment: FC<Props> = ({
     setAttachments([...attachments, attachment])
   }
 
-  const [isErc1155TokenGatedReferenceModule, setIsErc1155TokenGatedReferenceModule] = useState<boolean>(true)
-  const [userHasTheRequiredErc1155, setUserHasTheRequiredErc1155] = useState<boolean>(false)
-  if(setShowModal && post) {
-    const profileId: string = post.profile.id;
-    const pubId: string = post.id.split(post.profile.id + '-')[1];
+  const [
+    isErc1155TokenGatedReferenceModule,
+    setIsErc1155TokenGatedReferenceModule
+  ] = useState<boolean>(false)
+  const [userHasTheRequiredErc1155, setUserHasTheRequiredErc1155] =
+    useState<boolean>(false)
+  const profileId: string = post.profile.id
+  const pubId: string = post.id.split(post.profile.id + '-')[1]
 
-    useContractRead({
-      addressOrName: PROFILE_NFT,
-      contractInterface: ProfileNFT,
-      functionName: 'getPub',
-      args: [profileId, pubId],
-      onSuccess(res) {
-        if(res?.referenceModule === SISMO_REFERENCE_MODULE) {
-          setIsErc1155TokenGatedReferenceModule(true)
-          useContractRead({
-            addressOrName: SISMO_BADGE,
-            contractInterface: Erc1155,
-            functionName: 'balanceOf',
-            args: [currentUser.ownedBy, SISMO_BADGE_ID],
-            onSuccess(res) {
-              setUserHasTheRequiredErc1155(res[0] > 0)
-            },
-            onError(error: any) {
-              toast.error(error?.data?.message ?? error?.message)
-            }
-          })
-        } else {
-          setIsErc1155TokenGatedReferenceModule(false)
-        }
-      },
-      onError(error: any) {
-        toast.error(error?.data?.message ?? error?.message)
-      }
-    })
-  } else {
-    setIsErc1155TokenGatedReferenceModule(false);
-  }
+  useContractRead({
+    addressOrName: PROFILE_NFT,
+    contractInterface: ProfileNFT,
+    functionName: 'getPub',
+    args: [profileId, pubId],
+    onSuccess(res) {
+      setIsErc1155TokenGatedReferenceModule(
+        res?.referenceModule === SISMO_REFERENCE_MODULE
+      )
+    },
+    onError(error: any) {
+      toast.error(error?.data?.message ?? error?.message)
+    }
+  })
+
+  useContractRead({
+    addressOrName: SISMO_BADGE,
+    contractInterface: Erc1155,
+    functionName: 'balanceOf',
+    args: [currentUser.ownedBy, SISMO_BADGE_ID],
+    onSuccess(res) {
+      console.log(res)
+      setUserHasTheRequiredErc1155(res[0] > 0)
+    },
+    onError(error: any) {
+      toast.error(error?.data?.message ?? error?.message)
+    }
+  })
 
   return (
     <Card className={hideCard ? 'border-0 !shadow-none !bg-transparent' : ''}>
@@ -389,9 +393,24 @@ const NewComment: FC<Props> = ({
                   }
                 />
               ) : null}
-              {isErc1155TokenGatedReferenceModule && userHasTheRequiredErc1155 &&
-                  <WarningMessage className="linkify ml-1" message={<>A badge is required to comment this post. Mint yours on <a href="https://sandbox.sismo.io/lens-me-in" target="_blank">Sismo</a>!</>}/>
-              }
+              {isErc1155TokenGatedReferenceModule && userHasTheRequiredErc1155 && (
+                <WarningMessage
+                  className="linkify ml-1"
+                  message={
+                    <>
+                      A badge is required to comment this post. Mint yours on{' '}
+                      <a
+                        href="https://sandbox.sismo.io/lens-me-in"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Sismo
+                      </a>
+                      !
+                    </>
+                  }
+                />
+              )}
               <Button
                 className="ml-auto"
                 disabled={
@@ -400,7 +419,8 @@ const NewComment: FC<Props> = ({
                   signLoading ||
                   writeLoading ||
                   broadcastLoading ||
-                  (isErc1155TokenGatedReferenceModule && userHasTheRequiredErc1155)
+                  (isErc1155TokenGatedReferenceModule &&
+                    userHasTheRequiredErc1155)
                 }
                 icon={
                   isUploading ||
