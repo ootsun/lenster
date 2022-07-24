@@ -2,28 +2,27 @@ import '../styles.css'
 
 import { ApolloProvider } from '@apollo/client'
 import SiteLayout from '@components/SiteLayout'
+import { publicProvider } from '@wagmi/core/dist/declarations/src/providers/public'
 import { AppProps } from 'next/app'
 import Script from 'next/script'
 import { ThemeProvider } from 'next-themes'
-import {
-  ALCHEMY_KEY,
-  ALCHEMY_RPC,
-  CHAIN_ID,
-  IS_MAINNET,
-  IS_PRODUCTION
-} from 'src/constants'
+import { ALCHEMY_RPC, CHAIN_ID, IS_PRODUCTION } from 'src/constants'
 import { chain, configureChains, createClient, WagmiConfig } from 'wagmi'
 import { InjectedConnector } from 'wagmi/connectors/injected'
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
-import { alchemyProvider } from 'wagmi/providers/alchemy'
 
 import client from '../apollo'
 
 export { reportWebVitals } from 'next-axiom'
 
+// const { chains, provider } = configureChains(
+//   [IS_MAINNET ? chain.polygon : chain.polygonMumbai],
+//   [alchemyProvider({ alchemyId: ALCHEMY_KEY })]
+// )
+
 const { chains, provider } = configureChains(
-  [IS_MAINNET ? chain.polygon : chain.polygonMumbai],
-  [alchemyProvider({ alchemyId: ALCHEMY_KEY })]
+  [chain.hardhat],
+  [publicProvider()]
 )
 
 const connectors = () => {
