@@ -8,22 +8,18 @@ import { MetaMaskConnector } from '@wagmi/core/connectors/metaMask'
 import { AppProps } from 'next/app'
 import Script from 'next/script'
 import { ThemeProvider } from 'next-themes'
-import { IS_PRODUCTION } from 'src/constants'
-import { chain, createClient, WagmiConfig } from 'wagmi'
+import { ALCHEMY_KEY, IS_MAINNET, IS_PRODUCTION } from 'src/constants'
+import { chain, configureChains, createClient, WagmiConfig } from 'wagmi'
+import { alchemyProvider } from 'wagmi/providers/alchemy'
 
 import client from '../apollo'
 
 export { reportWebVitals } from 'next-axiom'
 
-// const { chains, provider } = configureChains(
-//   [IS_MAINNET ? chain.polygon : chain.polygonMumbai],
-//   [alchemyProvider({ alchemyId: ALCHEMY_KEY })]
-// )
-
-// const { chains, provider } = configureChains(
-//   [chain.hardhat],
-//   [getDefaultProvider]
-// )
+const { chains, provider } = configureChains(
+  [IS_MAINNET ? chain.polygon : chain.polygonMumbai],
+  [alchemyProvider({ alchemyId: ALCHEMY_KEY })]
+)
 
 const ethProvider = new JsonRpcProvider(process.env.RPC_URL, chain.hardhat.id)
 const connector = new MetaMaskConnector({ chains: [chain.hardhat] })
@@ -50,19 +46,11 @@ const wagmiClient = createClient({
 //     })
 //   ]
 // }
-
+//
 // const wagmiClient = createClient({
 //   autoConnect: true,
 //   connectors,
 //   provider
-// })
-
-// const wagmiClient = createClient({
-//   autoConnect: true,
-//   connectors,
-//   provider(config) {
-//     if()
-//   }
 // })
 
 const App = ({ Component, pageProps }: AppProps) => {

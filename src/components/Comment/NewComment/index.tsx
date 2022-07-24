@@ -328,7 +328,7 @@ const NewComment: FC<Props> = ({
     addressOrName: SISMO_BADGE,
     contractInterface: Erc1155,
     functionName: 'balanceOf',
-    args: [currentUser.ownedBy, SISMO_BADGE_ID],
+    args: [currentUser?.ownedBy, SISMO_BADGE_ID],
     onSuccess(res) {
       console.log(res)
       setUserHasTheRequiredErc1155(res[0] > 0)
@@ -393,24 +393,25 @@ const NewComment: FC<Props> = ({
                   }
                 />
               ) : null}
-              {isErc1155TokenGatedReferenceModule && userHasTheRequiredErc1155 && (
-                <WarningMessage
-                  className="linkify ml-1"
-                  message={
-                    <>
-                      A badge is required to comment this post. Mint yours on{' '}
-                      <a
-                        href="https://sandbox.sismo.io/lens-me-in"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Sismo
-                      </a>
-                      !
-                    </>
-                  }
-                />
-              )}
+              {isErc1155TokenGatedReferenceModule &&
+                !userHasTheRequiredErc1155 && (
+                  <WarningMessage
+                    className="linkify ml-1"
+                    message={
+                      <>
+                        A badge is required to comment this post. Mint yours on{' '}
+                        <a
+                          href="https://sandbox.sismo.io/lens-me-in"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Sismo
+                        </a>
+                        !
+                      </>
+                    }
+                  />
+                )}
               <Button
                 className="ml-auto"
                 disabled={
@@ -420,7 +421,7 @@ const NewComment: FC<Props> = ({
                   writeLoading ||
                   broadcastLoading ||
                   (isErc1155TokenGatedReferenceModule &&
-                    userHasTheRequiredErc1155)
+                    !userHasTheRequiredErc1155)
                 }
                 icon={
                   isUploading ||
